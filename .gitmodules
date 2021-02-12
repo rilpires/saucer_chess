@@ -1,0 +1,3 @@
+[submodule "chess_fen_validator"]
+	path = chess_fen_validator
+	url = https://github.com/rilpires/chess_fen_validator.git
