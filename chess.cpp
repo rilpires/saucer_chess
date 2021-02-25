@@ -1,6 +1,4 @@
 #include "chess.h"
-#include "chess_validator.h"
-
 
 
 Chess::Chess(): d_buffer(boost::asio::dynamic_buffer(read_string)) ,
@@ -9,16 +7,23 @@ Chess::Chess(): d_buffer(boost::asio::dynamic_buffer(read_string)) ,
 {
     thinking = false;
     d_buffer.grow( 8000 );
-    child_process = new boost::process::child(  "stockfish_12_win_x64/stockfish_20090216_x64.exe" , 
+    
+    #ifdef WIN32
+    const char* stockfish_executable = "stockfish_12.exe";
+    #else
+    const char* stockfish_executable = "stockfish_12";
+    #endif
+
+    child_process = new boost::process::child(  stockfish_executable , 
                                                 boost::process::std_in  <  write_pipe ,
                                                 boost::process::std_out >  read_pipe  );
     
     on_stdout = [&](const boost::system::error_code & ec, size_t n){
-        saucer_print("on stdout done");
+        // saucer_print("on stdout done");
         // if(!ec) boost::asio::async_read( *read_pipe , boost::asio::buffer(vread_buffer) , on_stdout );
     };
     on_stdin = [&]( const boost::system::error_code & ec, std::size_t n ){
-        saucer_print("on stdin done");
+        // saucer_print("on stdin done");
     };
 }
 Chess::~Chess(){
@@ -28,7 +33,7 @@ Chess::~Chess(){
 void            Chess::new_game( int level ){
     if( level > 20 ) level = 20;
     if( level < 0 ) level = 0;
-    
+    last_engine_move = "";
     // current_state_fen = "8/6q1/4K3/1q6/k7/8/1ppp4/7q w - - 3 10";
     current_state_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     chess_validator::get_table_state( current_state_fen.c_str() , &current_state );
@@ -71,7 +76,7 @@ void            Chess::start_thinking( int search_time_mseconds ){
     SAUCER_ASSERT( thinking == false , "Can't start thinking while thinking already!" );
     thinking = true;
     
-    saucer_print("IA: I'll start to think about " , current_state_fen );
+    saucer_print("AI: I'll start to think about " , current_state_fen );
     
     write_string = "position fen " + current_state_fen + "\ngo movetime " + std::to_string(search_time_mseconds) + " \n";
     boost::asio::async_write( write_pipe , boost::process::buffer(write_string) , on_stdin );
@@ -97,6 +102,7 @@ bool            Chess::finish_thinking(){
         }
         else if( is_move_valid(move) ) {
             apply_move( move );
+            last_engine_move = move;
             thinking = false;
             return true;
         }
@@ -114,6 +120,9 @@ std::string     Chess::get_current_winner(){
             return "white";
         else return "black";
     } else return "";
+}
+std::string     Chess::get_last_engine_move(){
+    return last_engine_move;
 }
 bool            Chess::is_draw(){
     draw_reason = chess_validator::get_draw_reason(&current_state); 
@@ -149,6 +158,7 @@ void            Chess::bind_methods(){
     REGISTER_LUA_MEMBER_FUNCTION( Chess , start_thinking );
     REGISTER_LUA_MEMBER_FUNCTION( Chess , finish_thinking );
     REGISTER_LUA_MEMBER_FUNCTION( Chess , get_current_winner );
+    REGISTER_LUA_MEMBER_FUNCTION( Chess , get_last_engine_move );
     REGISTER_LUA_MEMBER_FUNCTION( Chess , is_draw );
     REGISTER_LUA_MEMBER_FUNCTION( Chess , get_draw_reason );
 

@@ -10,6 +10,5 @@ set(BOOST_LIBRARYDIR "" CACHE PATH "Path to boost libs directories" )
 
 find_package(Boost REQUIRED)
 
-get_target_property( SAUCER_CORE_INCLUDE_DIRS saucer_core INTERFACE_INCLUDE_DIRECTORIES)
-target_include_directories( saucer_chess PUBLIC ${BOOST_ROOT} ${BOOST_INCLUDEDIR}  ${SAUCER_CORE_INCLUDE_DIRS} )
+target_include_directories( saucer_chess PUBLIC ${BOOST_ROOT} ${BOOST_INCLUDEDIR} $<TARGET_PROPERTY:saucer_core,INTERFACE_INCLUDE_DIRECTORIES> )
 target_link_directories( saucer_chess PUBLIC ${BOOST_LIBRARYDIR} )

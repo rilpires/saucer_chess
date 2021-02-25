@@ -27,6 +27,7 @@ class Chess : public Component {
 
         chess_validator::TableState     current_state;
         std::string     current_state_fen;
+        std::string     last_engine_move;
         int             draw_reason;
         int             invalid_reason;
         bool            thinking;
@@ -43,6 +44,7 @@ class Chess : public Component {
         void            start_thinking( int search_time_mseconds );
         bool            finish_thinking();
         std::string     get_current_winner();
+        std::string     get_last_engine_move();
         bool            is_draw();
         int             get_draw_reason();
 
