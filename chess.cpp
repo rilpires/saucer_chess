@@ -1,5 +1,8 @@
 #include "chess.h"
 
+#ifdef WIN32
+    #include <boost/process/windows.hpp>
+#endif
 
 Chess::Chess(): d_buffer(boost::asio::dynamic_buffer(read_string)) ,
                 read_pipe(boost::process::async_pipe(io_service)) ,
@@ -9,15 +12,16 @@ Chess::Chess(): d_buffer(boost::asio::dynamic_buffer(read_string)) ,
     d_buffer.grow( 8000 );
     
     #ifdef WIN32
-    const char* stockfish_executable = "stockfish_12.exe";
+        child_process = new boost::process::child(  "stockfish_12.exe" , 
+                                                boost::process::std_in  <  write_pipe ,
+                                                boost::process::std_out >  read_pipe , 
+                                                boost::process::windows::hide );
     #else
-    const char* stockfish_executable = "stockfish_12";
+        child_process = new boost::process::child(  "stockfish_12" , 
+                                                boost::process::std_in  <  write_pipe ,
+                                                boost::process::std_out >  read_pipe );
     #endif
 
-    child_process = new boost::process::child(  stockfish_executable , 
-                                                boost::process::std_in  <  write_pipe ,
-                                                boost::process::std_out >  read_pipe  );
-    
     on_stdout = [&](const boost::system::error_code & ec, size_t n){
         // saucer_print("on stdout done");
         // if(!ec) boost::asio::async_read( *read_pipe , boost::asio::buffer(vread_buffer) , on_stdout );
